@@ -835,15 +835,17 @@ class Modules:
         if durations:
             st.markdown("###### :material/alarm_on: Round Duration")
             with st.container(border=False, horizontal=True):
+                st.metric("Total Duration", f"{int((sum(durations))//3600)}h {int((sum(durations)%3600)//60)}m {int((sum(durations)%3600)%60)}s", border=True, width="stretch", icon=":material/timer_play:")
+                st.metric("Average Duration", f"{int((sum(durations)/len(durations))//60)}m {int((sum(durations)/len(durations))%60)}s", border=True, width="stretch", icon=":material/avg_time:")
+            with st.container(border=False, horizontal=True):
                 st.metric("Fastest Round", f"{int(min(durations)//60)}m {int(min(durations)%60)}s", st.session_state.scores_df["Round"].iloc[durations.index(min(durations))], delta_arrow="off", delta_color="green", border=True, icon=":material/acute:")
                 st.metric("Longest Round", f"{int(max(durations)//60)}m {int(max(durations)%60)}s", st.session_state.scores_df["Round"].iloc[durations.index(max(durations))], delta_arrow="off", delta_color="red", border=True, icon=":material/avg_pace:")
-            st.metric("Average Duration", f"{int((sum(durations)/len(durations))//60)}m {int((sum(durations)/len(durations))%60)}s", border=True, width="stretch")
         else:
             st.markdown("###### :material/alarm_on: Round Duration")
             with st.container(border=False, horizontal=True):
                 st.metric("Fastest Round", "0m 00s", "---", delta_arrow="off", delta_color="green", border=True, icon=":material/acute:")
                 st.metric("Longest Round", "0m 00s", "---", delta_arrow="off", delta_color="red", border=True, icon=":material/avg_pace:")
-            st.metric("Average Duration", "0m 00s", border=True, width="stretch")
+            st.metric("Average Duration", "0m 00s", border=True, width="stretch", icon=":material/avg_time:")
         st.markdown("###### :material/motion_blur: Longest Streaks")
         with st.container(border=False, horizontal=True):
             if max_winstreak != [0,0,0,0]:
