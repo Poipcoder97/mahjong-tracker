@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    html, body { margin: 0; padding: 0; background: transparent; }
+    .table-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+        background: transparent;
+    }
+    .mahjong-table {
+        position: relative;
+        width: 400px;
+        height: 400px;
+        background: #2d7d2d;
+        border: 8px solid #1a5c1a;
+        border-radius: 16px;
+        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box;
+    }
+    .center-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: #e74c3c;
+        border: none;
+        color: white;
+        font-size: 28px;
+        cursor: pointer;
+        transition: background 0.2s;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        padding: 0;
+        line-height: 1;
+    }
+    .center-button:hover { background: #c0392b; }
+    .center-button:active { background: #a93226; }
+    .direction {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: background 0.15s;
+        background: transparent;
+        border: none;
+    }
+    .direction:hover {
+        background: rgba(255, 255, 255, 0.18);
+    }
+    .direction-row {
+        display: none;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        pointer-events: none;
+    }
+    .direction.active-streak .direction-row {
+        display: flex;
+    }
+    .direction-character-plain {
+        font-size: clamp(18px, 5vw, 32px);
+        font-weight: bold;
+        color: #1a5c1a;
+        font-family: 'KaiTi', 'STKaiti', 'Microsoft YaHei', serif;
+        letter-spacing: 2px;
+        line-height: 1;
+        pointer-events: none;
+    }
+    .direction.active-streak .direction-character-plain {
+        display: none;
+    }
+    .direction-character {
+        font-size: clamp(18px, 5vw, 32px);
+        font-weight: bold;
+        color: #1a5c1a;
+        font-family: 'KaiTi', 'STKaiti', 'Microsoft YaHei', serif;
+        letter-spacing: 2px;
+        line-height: 1;
+        pointer-events: none;
+    }
+    .player-name {
+        font-size: clamp(18px, 3vw, 24px);
+        font-weight: 700;
+        color: #1a5c1a;
+        font-family: 'Avenir Next', 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        letter-spacing: 1px;
+        margin-top: 6px;
+        white-space: nowrap;
+        pointer-events: none;
+    }
+    .dice-icon, .fire-icon {
+        width: clamp(16px, 4vw, 26px);
+        height: clamp(16px, 4vw, 26px);
+        flex-shrink: 0;
+        pointer-events: none;
+    }
+    .fire-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        pointer-events: none;
+    }
+    .winstreak-number {
+        font-size: clamp(12px, 2.8vw, 16px);
+        font-weight: 800;
+        color: #1a5c1a;
+        line-height: 1;
+        font-family: 'Avenir Next', 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        pointer-events: none;
+    }
+    .direction.active-streak .direction-character,
+    .direction.active-streak .direction-character-plain,
+    .direction.active-streak .player-name,
+    .direction.active-streak .winstreak-number {
+        color: #ffffff;
+    }
+    .direction-east {
+        bottom: clamp(5%, 8%, 12%);
+        left: 50%;
+        transform: translateX(-50%) rotate(0deg);
+    }
+    .direction-south {
+        top: 50%;
+        right: clamp(5%, 8%, 12%);
+        transform: translateY(-50%) rotate(-90deg);
+    }
+    .direction-west {
+        top: clamp(5%, 8%, 12%);
+        left: 50%;
+        transform: translateX(-50%) rotate(180deg);
+    }
+    .direction-north {
+        top: 50%;
+        left: clamp(5%, 8%, 12%);
+        transform: translateY(-50%) rotate(90deg);
+    }
+    @media (max-width: 500px) {
+        .mahjong-table { width: 300px; height: 300px; border-width: 6px; border-radius: 12px; }
+        .direction-character { font-size: 24px; }
+        .player-name { font-size: clamp(16px, 2.5vw, 20px); }
+        .center-button { width: 55px; height: 55px; font-size: 22px; }
+    }
+    @media (max-width: 350px) {
+        .mahjong-table { width: 250px; height: 250px; border-width: 5px; border-radius: 10px; }
+        .direction-character { font-size: 20px; }
+        .player-name { font-size: clamp(14px, 2vw, 17px); }
+        .center-button { width: 45px; height: 45px; font-size: 18px; }
+    }
+</style>
+</head>
+<body>
+<div class="table-container">
+    <div class="mahjong-table" id="mahjongTable">
+        <button class="direction direction-east" id="btnEast">
+            <span class="direction-character-plain">東</span>
+            <span class="direction-row">
+                <svg class="dice-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="20" height="20" rx="5" fill="#f5f5f5"/>
+                    <circle cx="7.5" cy="7.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="16.5" cy="7.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="12" cy="12" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="7.5" cy="16.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="16.5" cy="16.5" r="1.8" fill="#2d2d2d"/>
+                </svg>
+                <span class="direction-character">東</span>
+                <span class="fire-group">
+                    <svg class="fire-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C12 2 7 7.5 7 12.5C7 15.5376 9.23858 18 12 18C14.7614 18 17 15.5376 17 12.5C17 11 16.3 9.5 16.3 9.5C16.3 9.5 15.5 11 14.2 11.2C14.6 9.8 14 7.5 12 2Z" fill="#ff7a00"/>
+                        <path d="M12 8.5C12 8.5 9.8 11.2 9.8 13.5C9.8 14.9 10.79 16 12 16C13.21 16 14.2 14.9 14.2 13.5C14.2 12.8 13.9 12.1 13.9 12.1C13.9 12.1 13.5 12.9 12.85 13C13 12.3 12.7 10.9 12 8.5Z" fill="#ffc233"/>
+                    </svg>
+                    <span class="winstreak-number" id="streakEast">0</span>
+                </span>
+            </span>
+            <span class="player-name" id="nameEast"></span>
+        </button>
+        <button class="direction direction-south" id="btnSouth">
+            <span class="direction-character-plain">南</span>
+            <span class="direction-row">
+                <svg class="dice-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="20" height="20" rx="5" fill="#f5f5f5"/>
+                    <circle cx="7.5" cy="7.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="16.5" cy="7.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="12" cy="12" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="7.5" cy="16.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="16.5" cy="16.5" r="1.8" fill="#2d2d2d"/>
+                </svg>
+                <span class="direction-character">南</span>
+                <span class="fire-group">
+                    <svg class="fire-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C12 2 7 7.5 7 12.5C7 15.5376 9.23858 18 12 18C14.7614 18 17 15.5376 17 12.5C17 11 16.3 9.5 16.3 9.5C16.3 9.5 15.5 11 14.2 11.2C14.6 9.8 14 7.5 12 2Z" fill="#ff7a00"/>
+                        <path d="M12 8.5C12 8.5 9.8 11.2 9.8 13.5C9.8 14.9 10.79 16 12 16C13.21 16 14.2 14.9 14.2 13.5C14.2 12.8 13.9 12.1 13.9 12.1C13.9 12.1 13.5 12.9 12.85 13C13 12.3 12.7 10.9 12 8.5Z" fill="#ffc233"/>
+                    </svg>
+                    <span class="winstreak-number" id="streakSouth">0</span>
+                </span>
+            </span>
+            <span class="player-name" id="nameSouth"></span>
+        </button>
+        <button class="direction direction-west" id="btnWest">
+            <span class="direction-character-plain">西</span>
+            <span class="direction-row">
+                <svg class="dice-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="20" height="20" rx="5" fill="#f5f5f5"/>
+                    <circle cx="7.5" cy="7.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="16.5" cy="7.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="12" cy="12" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="7.5" cy="16.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="16.5" cy="16.5" r="1.8" fill="#2d2d2d"/>
+                </svg>
+                <span class="direction-character">西</span>
+                <span class="fire-group">
+                    <svg class="fire-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C12 2 7 7.5 7 12.5C7 15.5376 9.23858 18 12 18C14.7614 18 17 15.5376 17 12.5C17 11 16.3 9.5 16.3 9.5C16.3 9.5 15.5 11 14.2 11.2C14.6 9.8 14 7.5 12 2Z" fill="#ff7a00"/>
+                        <path d="M12 8.5C12 8.5 9.8 11.2 9.8 13.5C9.8 14.9 10.79 16 12 16C13.21 16 14.2 14.9 14.2 13.5C14.2 12.8 13.9 12.1 13.9 12.1C13.9 12.1 13.5 12.9 12.85 13C13 12.3 12.7 10.9 12 8.5Z" fill="#ffc233"/>
+                    </svg>
+                    <span class="winstreak-number" id="streakWest">0</span>
+                </span>
+            </span>
+            <span class="player-name" id="nameWest"></span>
+        </button>
+        <button class="direction direction-north" id="btnNorth">
+            <span class="direction-character-plain">北</span>
+            <span class="direction-row">
+                <svg class="dice-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="20" height="20" rx="5" fill="#f5f5f5"/>
+                    <circle cx="7.5" cy="7.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="16.5" cy="7.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="12" cy="12" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="7.5" cy="16.5" r="1.8" fill="#2d2d2d"/>
+                    <circle cx="16.5" cy="16.5" r="1.8" fill="#2d2d2d"/>
+                </svg>
+                <span class="direction-character">北</span>
+                <span class="fire-group">
+                    <svg class="fire-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C12 2 7 7.5 7 12.5C7 15.5376 9.23858 18 12 18C14.7614 18 17 15.5376 17 12.5C17 11 16.3 9.5 16.3 9.5C16.3 9.5 15.5 11 14.2 11.2C14.6 9.8 14 7.5 12 2Z" fill="#ff7a00"/>
+                        <path d="M12 8.5C12 8.5 9.8 11.2 9.8 13.5C9.8 14.9 10.79 16 12 16C13.21 16 14.2 14.9 14.2 13.5C14.2 12.8 13.9 12.1 13.9 12.1C13.9 12.1 13.5 12.9 12.85 13C13 12.3 12.7 10.9 12 8.5Z" fill="#ffc233"/>
+                    </svg>
+                    <span class="winstreak-number" id="streakNorth">0</span>
+                </span>
+            </span>
+            <span class="player-name" id="nameNorth"></span>
+        </button>
+        <button class="center-button" id="rotateButton">
+            <span class="arrow">⟳</span>
+        </button>
+    </div>
+</div>
+<script>
+    // --- Minimal self-contained Streamlit component bridge ---
+    // (Avoids relying on the streamlit-component-lib CDN bundle, which does
+    // not reliably expose a "window.Streamlit" global when loaded via <script>.)
+    function sendMessageToStreamlitClient(type, data) {
+        const outData = Object.assign({ isStreamlitMessage: true, type: type }, data);
+        window.parent.postMessage(outData, '*');
+    }
+
+    const Streamlit = {
+        setComponentReady: function () {
+            sendMessageToStreamlitClient('streamlit:componentReady', { apiVersion: 1 });
+        },
+        setFrameHeight: function (height) {
+            sendMessageToStreamlitClient('streamlit:setFrameHeight', { height: height });
+        },
+        setComponentValue: function (value) {
+            sendMessageToStreamlitClient('streamlit:setComponentValue', { value: value });
+        },
+        RENDER_EVENT: 'streamlit:render',
+        events: {
+            addEventListener: function (type, callback) {
+                window.addEventListener('message', function (event) {
+                    if (event.data.type === type) {
+                        event.detail = event.data;
+                        callback(event);
+                    }
+                });
+            },
+        },
+    };
+    // --- End bridge shim ---
+
+    const table = document.getElementById('mahjongTable');
+    const rotateBtn = document.getElementById('rotateButton');
+    let isAnimating = false;
+    // "laps" tracks how many full 90-degree steps have been applied since
+    // this iframe instance was created. The actual displayed angle is
+    // always laps * 90, and is never wrapped/mod'd locally, so the CSS
+    // transition always animates forward regardless of remounts.
+    let laps = 0;
+    let currentArgs = {};
+    let hasRenderedOnce = false;
+    let lastSentRotation = null; // rotation we last told Python about, still awaiting confirmation
+
+    function onRender(event) {
+        const args = event.detail.args;
+        currentArgs = args;
+
+        const serverRotation = ((args.rotation || 0) % 360 + 360) % 360;
+        console.log('[onRender] fired. args.rotation=', args.rotation, 'serverRotation=', serverRotation, 'hasRenderedOnce=', hasRenderedOnce, 'laps=', laps, 'isAnimating=', isAnimating, 'lastSentRotation=', lastSentRotation);
+
+        if (!hasRenderedOnce) {
+            console.log('[onRender] first render path: snapping laps to', serverRotation / 90);
+            // First render of this iframe instance (including after any
+            // remount): snap laps to match the server value with no
+            // animation, since there is nothing to animate from yet.
+            laps = serverRotation / 90;
+            table.style.transition = 'none';
+            table.style.transform = `rotate(${serverRotation}deg)`;
+            // Force reflow so the transition re-enables cleanly for future clicks.
+            void table.offsetWidth;
+            table.style.transition = '';
+            hasRenderedOnce = true;
+        } else if (lastSentRotation !== null && serverRotation !== lastSentRotation) {
+            // We're still waiting for the server to catch up to a rotation
+            // we already sent (a newer click may have fired since). This
+            // onRender carries a stale value from before that click landed
+            // - ignore it instead of "correcting" backward to it.
+            console.log('[onRender] ignoring stale rotation, awaiting confirmation of', lastSentRotation);
+        } else {
+            if (lastSentRotation !== null && serverRotation === lastSentRotation) {
+                lastSentRotation = null; // server has caught up, safe to resync normally again
+            }
+            const currentAngle = laps * 90;
+            const localMod = ((currentAngle % 360) + 360) % 360;
+            if (serverRotation !== localMod && !isAnimating) {
+                console.log('[onRender] RESYNC firing! localMod=', localMod, 'serverRotation=', serverRotation, 'laps before=', laps);
+                // Server disagrees with our local state (e.g. another client
+                // rotated it) and we're not mid-animation: jump forward to
+                // the nearest equivalent angle, never backward.
+                let diff = serverRotation - localMod;
+                if (diff < 0) diff += 360;
+                laps += diff / 90;
+                table.style.transform = `rotate(${laps * 90}deg)`;
+            }
+        }
+
+        document.getElementById('nameEast').textContent = args.east;
+        document.getElementById('nameSouth').textContent = args.south;
+        document.getElementById('nameWest').textContent = args.west;
+        document.getElementById('nameNorth').textContent = args.north;
+
+        document.getElementById('btnEast').dataset.player = args.east;
+        document.getElementById('btnSouth').dataset.player = args.south;
+        document.getElementById('btnWest').dataset.player = args.west;
+        document.getElementById('btnNorth').dataset.player = args.north;
+
+        // dice_roll: [direction ("east"/"south"/"west"/"north"), winstreak]
+        const diceRoll = args.dice_roll || ["east", 0];
+        const activeDirection = diceRoll[0];
+        const streakValue = diceRoll[1] || 0;
+
+        const directions = ['east', 'south', 'west', 'north'];
+        directions.forEach(dir => {
+            const btn = document.getElementById('btn' + dir.charAt(0).toUpperCase() + dir.slice(1));
+            const streakEl = document.getElementById('streak' + dir.charAt(0).toUpperCase() + dir.slice(1));
+            const isActive = dir === activeDirection;
+            streakEl.textContent = isActive ? streakValue : 0;
+            btn.classList.toggle('active-streak', isActive);
+        });
+
+        setSmartFrameHeight();
+    }
+
+    function setSmartFrameHeight() {
+        // Measure actual rendered content height instead of hardcoding,
+        // so the iframe doesn't reserve extra empty space below the table.
+        const container = document.querySelector('.table-container');
+        const height = container.getBoundingClientRect().height;
+        Streamlit.setFrameHeight(Math.ceil(height));
+    }
+
+    function rotateTable() {
+        if (isAnimating) { console.log('[rotateTable] blocked, isAnimating=true'); return; }
+        console.log('[rotateTable] click accepted. laps before=', laps);
+        isAnimating = true;
+        laps += 1;
+        console.log('[rotateTable] laps after increment=', laps, 'target angle=', laps * 90);
+        table.style.transform = `rotate(${laps * 90}deg)`;
+        setTimeout(() => {
+            isAnimating = false;
+            setSmartFrameHeight();
+            const reportedRotation = ((laps * 90 % 360) + 360) % 360;
+            lastSentRotation = reportedRotation;
+            console.log('[rotateTable] animation done, reporting rotation=', reportedRotation);
+            Streamlit.setComponentValue({ type: 'rotation', value: reportedRotation });
+        }, 800);
+    }
+
+
+    rotateBtn.addEventListener('click', rotateTable);
+    rotateBtn.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            rotateTable();
+        }
+    });
+
+    document.querySelectorAll('.direction').forEach(el => {
+        el.addEventListener('click', () => {
+            const player = el.dataset.player;
+            Streamlit.setComponentValue({ type: 'player_click', value: player });
+        });
+    });
+
+    Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
+    Streamlit.setComponentReady();
+    setSmartFrameHeight();
+</script>
+</body>
+</html>
