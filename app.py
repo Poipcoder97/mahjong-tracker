@@ -662,7 +662,7 @@ class Modules:
                     if st.session_state.dice_roll != [DIRECTIONS[round_data["round"]-1], round_data["streak"]]:
                         st.session_state.dice_roll = [DIRECTIONS[round_data["round"]-1], round_data["streak"]]
                         st.rerun()
-                    text = "Finish Game" if round_data["winner"] != 3 and round_data["round"] == 4 and round_data["current_cycle"] == 3 else "Next Round"
+                    text = "Finish Game" if not round_data["draw"] and round_data["winner"] != 3 and round_data["round"] == 4 and round_data["current_cycle"] == 3 else "Next Round"
                     if st.button(text, icon=":material/check:", type="primary", disabled=((bonus_seat==-1 or bonus_count<st.session_state.min_bonus) and not round_data["draw"]), width="stretch"):
                         if text == "Next Round":
                             if round_data["draw"]:
